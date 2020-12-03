@@ -13,6 +13,7 @@ final class UserDefaultService {
     enum UDKeys: String {
         case currentUserID = "userID"
         case currentCartID = "cartID"
+        case isUserLogin   = "isUserLogin"
     }
 
     static var shared: UserDefaultService = {
@@ -31,5 +32,10 @@ final class UserDefaultService {
     public var currentCartID: String {
         get { userDefault.string(forKey: UDKeys.currentCartID.rawValue) ?? "" }
         set { userDefault.set(newValue, forKey: UDKeys.currentCartID.rawValue) }
+    }
+    
+    public var isUserLogin: Bool {
+        get { userDefault.bool(forKey: UDKeys.isUserLogin.rawValue) }
+        set { userDefault.set(newValue, forKey: UDKeys.isUserLogin.rawValue) }
     }
 }

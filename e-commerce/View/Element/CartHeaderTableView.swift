@@ -10,9 +10,9 @@ import UIKit
 
 class CartHeaderTableView: UIView {
     
-    let pickerCartButton    = UIButton()
-    let settingButton       = UIButton()
-    let userSettingButton   = UIButton()
+    let pickerCartButton    = ECButton()
+    let settingButton       = ECButton()
+    let userSettingButton   = ECButton()
     let titleLabel          = UILabel()
     let userCountLabel      = UILabel()
     let myPriceLabel        = UILabel()

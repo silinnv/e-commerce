@@ -12,20 +12,21 @@ import RxCocoa
 
 class CartViewController: UIViewController {
     
-    let bag = DisposeBag()
+    var cartView            = CartView()
+    let bag                 = DisposeBag()
+    let userDefault         = UserDefaultService.shared
     
-    var cartView = CartView()
-    var tableView: UITableView!
-    var button: UIButton!
-    var cartSettingButton: UIButton!
-    var userSettingButton: UIButton!
+    var tableView:          UITableView!
+    var cartPickerbutton:   UIButton!
+    var cartSettingButton:  UIButton!
+    var userSettingButton:  UIButton!
     
     override func loadView() {
-        view = cartView
-        tableView = cartView.tableView
-        button = cartView.cartPickerButton
-        cartSettingButton = cartView.cartSettingButton
-        userSettingButton = cartView.userSettingButton
+        view                = cartView
+        tableView           = cartView.tableView
+        cartPickerbutton    = cartView.cartPickerButton
+        cartSettingButton   = cartView.cartSettingButton
+        userSettingButton   = cartView.userSettingButton
     }
 
     override func viewDidLoad() {
@@ -33,9 +34,40 @@ class CartViewController: UIViewController {
         setupTableView()
     }
     
+    func setupTableView() {
+                
+//        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "DefaultCell")
+//
+//        let data = Observable<[Int]>.just([1,2,3])
+//
+//        data.bind(to: tableView.rx.items(cellIdentifier: "DefaultCell", cellType: UITableViewCell.self)) { a, b, c in
+//            c.textLabel?.text = "\(b)"
+//        }.disposed(by: bag)
+//
+//        tableView.rx.modelSelected(Int.self).subscribe(onNext: { nbr in
+//            print(nbr)
+//        }).disposed(by: bag)
+        
+        cartPickerbutton.rx.tap.bind { [unowned self] in
+            self.showCartList()
+        }.disposed(by: bag)
+        
+        userSettingButton.rx.tap.bind { print("user button") }.disposed(by: bag)
+        
+        cartSettingButton.rx.tap.bind { print("cart button") }.disposed(by: bag)
+    }
+    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        if userDefault.currentCartID.isEmpty {
+            self.showCartList(onFullScrean: true)
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -43,30 +75,12 @@ class CartViewController: UIViewController {
         navigationController?.setNavigationBarHidden(false, animated: animated)
     }
     
-    func setupTableView() {
-                
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "DefaultCell")
-        
-        let data = Observable<[Int]>.just([1,2,3])
-        
-        data.bind(to: tableView.rx.items(cellIdentifier: "DefaultCell", cellType: UITableViewCell.self)) { a, b, c in
-            c.textLabel?.text = "\(b)"
-        }.disposed(by: bag)
-        
-        tableView.rx.modelSelected(Int.self).subscribe(onNext: { nbr in
-            print(nbr)
-        }).disposed(by: bag)
-        
-//        button.rx.tap.bind { [unowned self] in
-//            let vc = CartListViewController()
-//            self.navigationController?.showDetailViewController(vc, sender: nil)
-//        }.disposed(by: bag)
-        
-        userSettingButton.rx.tap.bind {
-            print("user button")
-            let vc = LoginViewController()
-            self.navigationController?.pushViewController(vc, animated: true)
-        }.disposed(by: bag)
-        cartSettingButton.rx.tap.bind { print("cart button") }.disposed(by: bag)
+    private func showCartList(onFullScrean fullScrean: Bool = false) {
+        let cartListViewConstroller = CartListViewController()
+        if fullScrean {
+            cartListViewConstroller.modalPresentationStyle = .fullScreen
+        }
+        self.navigationController?.showDetailViewController(cartListViewConstroller, sender: nil)
     }
+
 }

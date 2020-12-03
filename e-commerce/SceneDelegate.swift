@@ -12,15 +12,29 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
     
-    
-
-
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
+        
+        var rootVC: UIViewController!
+        let userDefalt = UserDefaultService.shared
+        let isUserLogin = userDefalt.isUserLogin
+        
+        rootVC = isUserLogin ? MainTabBarController() : LoginNavigationController()
+        
         self.window = UIWindow(windowScene: windowScene)
-        let rootVC = MainTabBarController()
         self.window?.rootViewController = rootVC
         self.window?.makeKeyAndVisible()
+    }
+    
+    func setRootViewController(newViewController viewController: UIViewController) {
+        guard let window = self.window else { return }
+        
+        window.rootViewController = viewController
+        UIView.transition(with: window,
+                          duration: 0.3,
+                          options: [.transitionCrossDissolve],
+                          animations: nil,
+                          completion: nil)
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
