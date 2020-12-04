@@ -103,10 +103,39 @@ class CartHeaderTableView: UIView {
     }
     
     private func setDefaultValue() {
-        titleLabel.text = "T"
+        titleLabel.text = " "
         userCountLabel.text = " "
         myPriceLabel.text = " "
         fullPriceLabel.text = " "
     }
     
+}
+
+extension CartHeaderTableView {
+    
+    convenience init(with cart: CartDataSource) {
+        self.init()
+        updateView(with: cart)
+    }
+    
+    func updateView(with cart: CartDataSource) {
+        let customerCount = cart.customers.count
+        var customerSuffix: String
+        
+        switch customerCount % 10 {
+        case 0, 5...9 : customerSuffix = "ов"
+        case 2...4:     customerSuffix = "a"
+        default:        customerSuffix = ""
+        }
+        
+        if cart.type == .privates {
+            fullPriceLabel.text = " ₽"
+            userCountLabel.text = "Личная корзина"
+        } else {
+            fullPriceLabel.text = String(format: "/ %.0lf ₽", cart.fullPrice)
+            userCountLabel.text = String(customerCount) + " участник" + customerSuffix
+        }
+        titleLabel.text         = cart.name
+        myPriceLabel.text       = String(format: "%.0lf", cart.myPrice)
+    }
 }

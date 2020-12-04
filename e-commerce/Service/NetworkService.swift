@@ -9,9 +9,17 @@
 import Foundation
 import Firebase
 import FirebaseAuth
+import RxSwift
+import RxCocoa
 
 class NetworkService {
     
+    private let ref = Database.database().reference()
+    private let bag = DisposeBag()
+    private let userDefault = UserDefaultService.shared
+    
+    
+    // MARK: - Auth
     func singIn(email: String, password: String, _ clouser: @escaping (Result<String, Error>) -> Void) {
         
         Auth.auth().signIn(withEmail: email, password: password) { user, error in
@@ -21,6 +29,75 @@ class NetworkService {
             }
             clouser(.success(user.user.uid))
         }
+    }
+    
+    // MARK: - Cart
+    func subscribeOnCartKeys() -> Observable<[String]> {
+
+        let currentUserID = userDefault.currentUserID
+
+        return Observable<[String]>.create { [unowned self] observable in
+            let refCartList = self.ref.child("Users").child(currentUserID).child("Carts")
+            refCartList.observe(.value) { snapshot in
+                if let data = snapshot.value as? [String: Any] {
+                    let cartList = Array(data.map { $0.key })
+                    observable.onNext(cartList)
+                }
+            }
+            return Disposables.create()
+        }
+    }
+    
+    func requsetCart(forKey key: String, _ complition: @escaping (CartDatabaseProtocol) -> Void) {
+        
+        let refCart = self.ref.child("Carts").child(key)
+        
+        refCart.observeSingleEvent(of: .value) { snapshot in
+            if let data = snapshot.value as? [String: Any],
+                let cart = CartDatabase(key: key, dictionary: data) {
+                complition(cart)
+            }
+        }
+    }
+    
+    func requestCarts(forKeys keys: [String]) -> Observable<[CartDatabaseProtocol]> {
+        Observable.create { [unowned self] observer in
+            for key in keys {
+                self.requsetCart(forKey: key) { cart in
+                    observer.onNext(cart)
+                    if key == keys.last { observer.onCompleted() }
+                }
+            }
+            return Disposables.create()
+        }
+        .toArray()
+        .asObservable()
+    }
+    
+    // MARK: - Product
+    func requestProduct(forKey key: String, _ complition: @escaping (ProductDatabaseProtocol) -> Void) {
+        let refProduct = self.ref.child("Products").child(key)
+        
+        refProduct.observeSingleEvent(of: .value) { snapshot in
+            if let data = snapshot.value as? [String: Any],
+                let product = ProductDatabase(key: key, dictionary: data) {
+                complition(product)
+            }
+        }
+    }
+    
+    func requestProducts(forKeys keys: [String]) -> Observable<[ProductDatabaseProtocol]> {
+        Observable.create { [unowned self] observer in
+            for key in keys {
+                self.requestProduct(forKey: key) { product in
+                    observer.onNext(product)
+                    if key == keys.last { observer.onCompleted() }
+                }
+            }
+            return Disposables.create()
+        }
+        .toArray()
+        .asObservable()
     }
     
 }

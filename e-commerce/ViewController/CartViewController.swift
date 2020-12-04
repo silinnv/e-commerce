@@ -9,52 +9,59 @@
 import UIKit
 import RxSwift
 import RxCocoa
+import RxDataSources
 
 class CartViewController: UIViewController {
     
-    var cartView            = CartView()
+    let cartView            = CartView()
+    let viewModel           = CartViewModel()
     let bag                 = DisposeBag()
     let userDefault         = UserDefaultService.shared
     
-    var tableView:          UITableView!
-    var cartPickerbutton:   UIButton!
-    var cartSettingButton:  UIButton!
-    var userSettingButton:  UIButton!
-    
     override func loadView() {
-        view                = cartView
-        tableView           = cartView.tableView
-        cartPickerbutton    = cartView.cartPickerButton
-        cartSettingButton   = cartView.cartSettingButton
-        userSettingButton   = cartView.userSettingButton
+        view = cartView
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupTableView()
+        setupView()
+        setupViewModel()
     }
     
-    func setupTableView() {
-                
-//        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "DefaultCell")
-//
-//        let data = Observable<[Int]>.just([1,2,3])
-//
-//        data.bind(to: tableView.rx.items(cellIdentifier: "DefaultCell", cellType: UITableViewCell.self)) { a, b, c in
-//            c.textLabel?.text = "\(b)"
-//        }.disposed(by: bag)
-//
-//        tableView.rx.modelSelected(Int.self).subscribe(onNext: { nbr in
-//            print(nbr)
-//        }).disposed(by: bag)
+    func setupView() {
         
-        cartPickerbutton.rx.tap.bind { [unowned self] in
-            self.showCartList()
-        }.disposed(by: bag)
+        cartView
+            .cartPickerButton
+            .rx.tap.bind { [unowned self] in
+                self.showCartList()
+            }.disposed(by: bag)
         
-        userSettingButton.rx.tap.bind { print("user button") }.disposed(by: bag)
+        cartView
+            .userSettingButton
+            .rx.tap.bind {
+                print("user button")
+            }.disposed(by: bag)
         
-        cartSettingButton.rx.tap.bind { print("cart button") }.disposed(by: bag)
+        cartView
+            .cartSettingButton
+            .rx.tap.bind {
+                print("cart button")
+            }.disposed(by: bag)
+    }
+    
+    func setupViewModel() {
+        
+        viewModel.setup()
+        
+        viewModel
+            .cartSubject
+            .bind { [unowned self] cart in
+                self.cartView.updateView(with: cart)
+            }.disposed(by: bag)
+    }
+    
+    func loadCart(cartID: String) {
+        
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -65,9 +72,10 @@ class CartViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-        if userDefault.currentCartID.isEmpty {
-            self.showCartList(onFullScrean: true)
-        }
+        // TODO: Load cart
+        // load first cart
+        // if (cart count == 0) -> oper cartList
+
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -80,6 +88,13 @@ class CartViewController: UIViewController {
         if fullScrean {
             cartListViewConstroller.modalPresentationStyle = .fullScreen
         }
+        
+        cartListViewConstroller
+            .cartPick
+            .bind { [unowned self] cart in
+                self.viewModel.cartSubject.onNext(cart)
+        }.disposed(by: bag)
+        
         self.navigationController?.showDetailViewController(cartListViewConstroller, sender: nil)
     }
 

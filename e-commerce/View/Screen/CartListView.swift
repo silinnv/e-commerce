@@ -10,7 +10,8 @@ import UIKit
 
 class CartListView: UIView {
     
-    let tableView = UITableView()
+    let tableView           = UITableView()
+    let createCartButton    = ECButton()
     
     init() {
         super.init(frame: .zero)
@@ -24,20 +25,35 @@ class CartListView: UIView {
     private func commonInit() {
         backgroundColor = .orange
         setupTableView()
+        setupCreateCartButton()
         setupConstraints()
     }
     
     private func setupTableView() {
-        addSubview(tableView)
-        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.separatorStyle = .none
+        add(tableView)
+    }
+    
+    private func setupCreateCartButton() {
+        createCartButton.setTitle("Создать корзину", for: .normal)
+        createCartButton.setTitleColor(.white, for: .normal)
+        createCartButton.backgroundColor = .systemIndigo
+        createCartButton.layer.cornerRadius = 8
+        add(createCartButton)
     }
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: topAnchor, constant: 50),
+            tableView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 50),
             tableView.bottomAnchor.constraint(equalTo: bottomAnchor),
             tableView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: trailingAnchor)
+            tableView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            
+            createCartButton.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor, constant: -18),
+            createCartButton.heightAnchor.constraint(equalToConstant: 50),
+            createCartButton.widthAnchor.constraint(equalToConstant: 260).priority(500),
+            createCartButton.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 20),
+            createCartButton.centerXAnchor.constraint(equalTo: centerXAnchor)
         ])
     }
 }

@@ -10,11 +10,12 @@ import UIKit
 
 class CartView: UIView {
     
-    let headerView: CartHeaderTableView = CartHeaderTableView()
-    let tableView = UITableView()
-    let cartPickerButton: UIButton!
-    let cartSettingButton: UIButton!
-    let userSettingButton: UIButton!
+    let tableView           = UITableView()
+    let headerView          = CartHeaderTableView()
+    
+    let cartPickerButton:   UIButton!
+    let cartSettingButton:  UIButton!
+    let userSettingButton:  UIButton!
     
     init(isCompactMode: Bool = false) {
         cartPickerButton = headerView.pickerCartButton
@@ -31,9 +32,9 @@ class CartView: UIView {
     private func commonInit(isCompactMode: Bool) {
         
         headerView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.tableHeaderView = headerView
-        addSubview(tableView)
+        tableView.separatorStyle = .none
+        add(tableView)
         
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: topAnchor),
@@ -47,4 +48,14 @@ class CartView: UIView {
         ])
     }
     
+}
+
+extension CartView {
+    
+    func updateView(with cart: CartDataSource) {
+        headerView.updateView(with: cart)
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
+        }
+    }
 }
