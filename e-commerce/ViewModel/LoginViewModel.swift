@@ -12,7 +12,7 @@ import RxCocoa
 
 class LoginViewModel {
     
-    private let network = NetworkService()
+    private let network = NetworkService.shared
     private let userDefaults = UserDefaultService.shared
     
     private let errorMessage = "Неверный email или пароль"

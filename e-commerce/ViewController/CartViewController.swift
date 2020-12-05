@@ -54,10 +54,24 @@ class CartViewController: UIViewController {
         viewModel.setup()
         
         viewModel
-            .cartSubject
+            .cartDataSubject
             .bind { [unowned self] cart in
                 self.cartView.updateView(with: cart)
             }.disposed(by: bag)
+        
+        cartView.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        
+        let dataSource = RxTableViewSectionedReloadDataSource<SectionModel<String, ProductData>>(
+            configureCell: { (dataSource, tableView, indexPath, item) -> UITableViewCell in
+                let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+                cell.textLabel?.text = "\(item.myPrice) \(item.allPrice) " + item.name
+                return cell
+        },
+            titleForHeaderInSection: { dataSource, index in
+                return dataSource.sectionModels[index].model
+        })
+        
+        viewModel.productData.bind(to: self.cartView.tableView.rx.items(dataSource: dataSource)).disposed(by: bag)
     }
     
     func loadCart(cartID: String) {
@@ -92,7 +106,7 @@ class CartViewController: UIViewController {
         cartListViewConstroller
             .cartPick
             .bind { [unowned self] cart in
-                self.viewModel.cartSubject.onNext(cart)
+                self.viewModel.cartDataSubject.onNext(cart)
         }.disposed(by: bag)
         
         self.navigationController?.showDetailViewController(cartListViewConstroller, sender: nil)

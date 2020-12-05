@@ -26,7 +26,7 @@ extension CartDatabaseProtocol {
             .values
             .reduce(Set<String>()) { set, customer in
                 set.union(customer.productKeys)
-        }
+            }
     }
     
     func price(forCustomer customerID: String, withProducts productDictionary: [String: ProductDatabaseProtocol]) -> Double {

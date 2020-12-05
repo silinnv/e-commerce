@@ -57,5 +57,9 @@ class CartListViewController: UIViewController {
                         cell.textLabel?.text = model.name
                         cell.selectionStyle = .none
             }.disposed(by: bag)
+        
+        viewModel.isLoaded.bind { [unowned self] isLoaded in
+            self.cartListView.backgroundColor = isLoaded ? .systemYellow : . systemPurple
+        }.disposed(by: bag)
     }
 }

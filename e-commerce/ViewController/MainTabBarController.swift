@@ -16,7 +16,7 @@ class MainTabBarController: UITabBarController {
         let navigationCatalogController = UINavigationController()
         let catalogViewController = SecondVC()
         let catalogIcon = UITabBarItem(
-            title: "Продукты",
+            title: "Каталог",
             image: UIImage(systemName: "tray.full"),
             selectedImage: UIImage(systemName: "tray.full"))
         navigationCatalogController.viewControllers = [catalogViewController]

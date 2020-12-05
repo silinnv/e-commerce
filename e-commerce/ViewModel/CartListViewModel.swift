@@ -12,7 +12,7 @@ import RxCocoa
 
 class CartListViewModel {
     
-    private let network                 = NetworkService()
+    private let network                 = NetworkService.shared
     private let bag                     = DisposeBag()
     private let userDefault             = UserDefaultService.shared
     
