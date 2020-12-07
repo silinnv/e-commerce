@@ -11,7 +11,11 @@ import UIKit
 class CartView: UIView {
     
     let tableView           = UITableView()
-    let headerView          = CartHeaderTableView()
+    let headerView          : CartHeaderTableView = {
+        let header = CartHeaderTableView()
+        header.backgroundColor = .white
+        return header
+    }()
     
     let cartPickerButton:   UIButton!
     let cartSettingButton:  UIButton!
@@ -22,6 +26,7 @@ class CartView: UIView {
         cartSettingButton = headerView.settingButton
         userSettingButton = headerView.userSettingButton
         super.init(frame: .zero)
+        backgroundColor = .white
         commonInit(isCompactMode: isCompactMode)
     }
     
@@ -30,9 +35,8 @@ class CartView: UIView {
     }
     
     private func commonInit(isCompactMode: Bool) {
-        
-        headerView.translatesAutoresizingMaskIntoConstraints = false
         tableView.tableHeaderView = headerView
+        tableView.tableHeaderView?.translatesAutoresizingMaskIntoConstraints = false
         tableView.separatorStyle = .none
         add(tableView)
         

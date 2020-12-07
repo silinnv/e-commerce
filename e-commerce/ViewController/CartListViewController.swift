@@ -12,10 +12,9 @@ import RxCocoa
 
 class CartListViewController: UIViewController {
 
-    public let viewModel            = CartListViewModel()
-    public let cartPick             = PublishSubject<CartDataSource>()
-    private let cartListView        = CartListView()
-    private let bag                 = DisposeBag()
+    private let cartListView    = CartListView()
+    private let viewModel       = CartListViewModel()
+    private let bag             = DisposeBag()
     
     override func loadView() {
         view = cartListView
@@ -31,9 +30,8 @@ class CartListViewController: UIViewController {
         cartListView
             .tableView
             .rx
-            .modelSelected(CartDataSource.self).bind { [unowned self] cart in
-                self.cartPick.onNext(cart)
-                self.cartPick.onCompleted()
+            .modelSelected(CartDatabaseProtocol.self).bind { [unowned self] cart in
+                self.viewModel.pickCart(cart)
                 DispatchQueue.main.async {
                     self.dismiss(animated: true, completion: nil)
                 }
@@ -47,8 +45,9 @@ class CartListViewController: UIViewController {
         cartListView.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "DefaultCell")
         
         viewModel
-            .cartsDataSubject
-            .bind(to: cartListView
+            .cartsDatabaseSubject
+            .bind(to:
+                cartListView
                 .tableView
                 .rx
                 .items(

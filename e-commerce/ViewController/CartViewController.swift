@@ -28,6 +28,16 @@ class CartViewController: UIViewController {
         setupViewModel()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+    
     func setupView() {
         
         cartView
@@ -61,7 +71,7 @@ class CartViewController: UIViewController {
         
         cartView.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
         
-        let dataSource = RxTableViewSectionedReloadDataSource<SectionModel<String, ProductData>>(
+        let dataSource = RxTableViewSectionedReloadDataSource<SectionModel<String, ProductDataSource>>(
             configureCell: { (dataSource, tableView, indexPath, item) -> UITableViewCell in
                 let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
                 cell.textLabel?.text = "\(item.myPrice) \(item.allPrice) " + item.name
@@ -74,41 +84,11 @@ class CartViewController: UIViewController {
         viewModel.productData.bind(to: self.cartView.tableView.rx.items(dataSource: dataSource)).disposed(by: bag)
     }
     
-    func loadCart(cartID: String) {
-        
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(true, animated: animated)
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        
-        // TODO: Load cart
-        // load first cart
-        // if (cart count == 0) -> oper cartList
-
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        navigationController?.setNavigationBarHidden(false, animated: animated)
-    }
-    
     private func showCartList(onFullScrean fullScrean: Bool = false) {
         let cartListViewConstroller = CartListViewController()
         if fullScrean {
             cartListViewConstroller.modalPresentationStyle = .fullScreen
         }
-        
-        cartListViewConstroller
-            .cartPick
-            .bind { [unowned self] cart in
-                self.viewModel.cartDataSubject.onNext(cart)
-        }.disposed(by: bag)
-        
         self.navigationController?.showDetailViewController(cartListViewConstroller, sender: nil)
     }
 

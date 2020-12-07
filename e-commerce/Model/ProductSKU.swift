@@ -10,16 +10,23 @@ import Foundation
 
 struct ProductSKU: ProductSKUProtocol {
     
-    let ID:     String
+    let ID:         String
     
-    var count:  Double
+    var count:      Double
+    
+    let addedDate:  Date
 }
 
 extension ProductSKU: Mappable {
     
     init?(key: String, dictionary: [String : Any]) {
-        guard let count = dictionary["Count"] as? Double else { return nil }
-        self.ID     = key
-        self.count  = count
+        guard let count         = dictionary["Count"] as? Double,
+            let addedDateInt    = dictionary["AddedDate"] as? Int else { return nil }
+        
+        let addedDate = Date(timeIntervalSince1970: TimeInterval(addedDateInt))
+        
+        self.ID         = key
+        self.count      = count
+        self.addedDate  = addedDate
     }
 }

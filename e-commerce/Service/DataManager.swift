@@ -12,43 +12,62 @@ import RxCocoa
 
 class DataManager {
     
-    private init() {}
+    // MARK: - Properties
     static let shared: DataManager = {
         DataManager()
     }()
     
-    // MARK: - Properties
-    private let network             = NetworkService.shared
-    private let userDefault         = UserDefaultService.shared
+    private let network     = NetworkService.shared
+    private let userDefault = UserDefaultService.shared
     
-    let cartDatabaseSubject         = PublishSubject<CartDatabaseProtocol>()
-    let cartDataSourseSubject       = PublishSubject<CartDataSource>()
-    let productDatabaseSubject      = PublishSubject<ProductDatabase>()
-    let productDataSourceSubject    = PublishSubject<ProductData>()
+    var currentCartID:      String!
+    var cartDatabaseSubject = ReplaySubject<CartDatabaseProtocol>.create(bufferSize: 1)
+    var isLoaded            = BehaviorRelay<Bool>(value: true)
+    
+    // MARK: - Init
+    private init() {
+        currentCartID = userDefault.currentCartID
+        initSubscribeCart(byKey: currentCartID)
+    }
+    
+    func initSubscribeCart(byKey cartID: String) {
+        getRequestCartID(byKey: currentCartID) { [unowned self] cartID in
+            guard let requestCartID = cartID else { return }
+            self.subscribeOnCart(forKey: requestCartID)
+        }
+    }
+    
+    func subscribeOnCart(forKey key: String) {
+        isLoaded.accept(true)
+        network.subscribeOnCart(forKey: key) { [unowned self] cart in
+            self.isLoaded.accept(false)
+            self.currentCartID = cart.ID
+            self.userDefault.currentCartID = cart.ID
+            self.cartDatabaseSubject.onNext(cart)
+        }
+    }
     
     // MARK: - Cart
-    func requestCartKeys() -> Void {
-        
+    func getRequestCartID(byKey cartID: String, _ complition: @escaping (String?) -> Void) {
+        isLoaded.accept(true)
+        network.requestCartKeys { [unowned self] cartKeys in
+            self.isLoaded.accept(false)
+            guard !cartKeys.isEmpty else { return }
+            let requestCartID = cartKeys.contains(cartID) ? cartID : cartKeys.first!
+            complition(requestCartID)
+        }
     }
     
-    func requestCart(byKey key: String) {
-        // onNext()
+    func resubscribeOnCart(withNewCartKey newCartID: String) {
+        guard !newCartID.isEmpty else { return }
+        network.unsubscribeFromCart(byKey: currentCartID)
+        subscribeOnCart(forKey: newCartID)
     }
     
-    func subscribeOnCart(byKey key: String) {
-        // onNext()
+    func resubscribeOnCart(withNewCart newCart: CartDatabaseProtocol) {
+        cartDatabaseSubject.onNext(newCart)
+        let newCartID = newCart.ID
+        resubscribeOnCart(withNewCartKey: newCartID)
     }
     
-    func requestCarts(byKeys keys: String) -> Void {
-        
-    }
-    
-    // MARK: - Product
-    func requestProduct(byKey key: String) -> Void {
-        
-    }
-    
-    func requestProducts(byKeys keys: String) {
-        // onNext()
-    }
 }

@@ -10,7 +10,9 @@ import Foundation
 
 protocol ProductSKUProtocol {
     
-    var ID:     String  { get }
+    var ID:         String  { get }
     
-    var count:  Double  { get }
+    var count:      Double  { get }
+    
+    var addedDate:  Date    { get }
 }

@@ -22,7 +22,7 @@ class NetworkService {
         NetworkService()
     }()
     
-    private init() {}
+    private init() { }
     
     let cart = PublishSubject<CartDataSource>()
     
@@ -37,15 +37,26 @@ class NetworkService {
             clouser(.success(user.user.uid))
         }
     }
-    
-    // MARK: - Cart
-    func subscribeOnCartKeys() -> Observable<[String]> {
 
+    // MARK: - Cart key
+    func requestCartKeys(_ complition: @escaping ([String]) -> Void) {
         let currentUserID = userDefault.currentUserID
-
+        let refCartList = self.ref.child("Users").child(currentUserID).child("Carts")
+        
+        refCartList.observeSingleEvent(of: .value) { snapshot in
+            if let data = snapshot.value as? [String: Any] {
+                let cartList = Array(data.map { $0.key })
+                complition(cartList)
+            }
+        }
+    }
+    
+    func subscribeOnCartKeys() -> Observable<[String]> {
+        let currentUserID = userDefault.currentUserID
+        
         return Observable<[String]>.create { [unowned self] observable in
             let refCartList = self.ref.child("Users").child(currentUserID).child("Carts")
-            refCartList.observeSingleEvent(of: .value) { snapshot in
+            refCartList.observe(.value) { snapshot in
                 if let data = snapshot.value as? [String: Any] {
                     let cartList = Array(data.map { $0.key })
                     observable.onNext(cartList)
@@ -55,20 +66,7 @@ class NetworkService {
         }
     }
     
-    func requestCartKeys(_ complition: @escaping ([String]?) -> Void) {
-        let currentUserID = userDefault.currentUserID
-        let refCartList = self.ref.child("Users").child(currentUserID).child("Carts")
-        
-        refCartList.observeSingleEvent(of: .value) { snapshot in
-            if let data = snapshot.value as? [String: Any] {
-                let cartList = Array(data.map { $0.key })
-                complition(cartList)
-            } else {
-                complition(nil)
-            }
-        }
-    }
-    
+    // MARK: - Cart
     func requsetCart(forKey key: String, _ complition: @escaping (CartDatabaseProtocol) -> Void) {
         
         let refCart = self.ref.child("Carts").child(key)
@@ -77,19 +75,6 @@ class NetworkService {
             if let data = snapshot.value as? [String: Any],
                 let cart = CartDatabase(key: key, dictionary: data) {
                 complition(cart)
-            }
-        }
-    }
-    
-    func subscribeOnCart(forKey key: String, _ complition: @escaping (CartDatabaseProtocol?) -> Void) {
-        let refCart = self.ref.child("Carts").child(key)
-        
-        refCart.observe(.value) { snapshot in
-            if let data = snapshot.value as? [String: Any],
-                let cart = CartDatabase(key: key, dictionary: data) {
-                complition(cart)
-            } else {
-                complition(nil)
             }
         }
     }
@@ -111,6 +96,29 @@ class NetworkService {
         .asObservable()
     }
     
+    func subscribeOnCart(forKey key: String, _ complition: @escaping (CartDatabaseProtocol) -> Void) {
+        
+        guard !key.isEmpty else { return }
+        
+        let refCarts = self.ref.child("Carts")
+        let refCart = refCarts.child(key)
+        
+        refCarts.removeAllObservers()
+        refCart.observe(.value) { snapshot in
+            if let data = snapshot.value as? [String: Any],
+                let cart = CartDatabase(key: key, dictionary: data) {
+                complition(cart)
+            }
+        }
+    }
+    
+    func unsubscribeFromCart(byKey cartID: String) {
+        guard !cartID.isEmpty else { return }
+        
+        let cartRef = ref.child("Carts").child(cartID)
+        cartRef.removeAllObservers()
+    }
+    
     // MARK: - Product
     func requestProduct(forKey key: String, _ complition: @escaping (ProductDatabaseProtocol) -> Void) {
         let refProduct = self.ref.child("Products").child(key)
@@ -125,10 +133,13 @@ class NetworkService {
     
     func requestProducts(forKeys keys: [String]) -> Observable<[ProductDatabaseProtocol]> {
         Observable.create { [unowned self] observer in
+            var productCounter = 0
+            
             for key in keys {
                 self.requestProduct(forKey: key) { product in
+                    productCounter += 1
                     observer.onNext(product)
-                    if key == keys.last { observer.onCompleted() }
+                    if productCounter == keys.count { observer.onCompleted() }
                 }
             }
             return Disposables.create()

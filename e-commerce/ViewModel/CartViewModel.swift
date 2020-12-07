@@ -18,88 +18,68 @@ enum NetworkError: Error {
 
 class CartViewModel {
     
-    private let network         = NetworkService.shared
     private let bag             = DisposeBag()
     private let userDefault     = UserDefaultService.shared
+    private let network         = NetworkService.shared
+    private let dataManager     = DataManager.shared
     
     private let productSubject  = PublishSubject<[ProductDatabaseProtocol]>()
     
-    let cartDatabaseSubject     = PublishSubject<CartDatabaseProtocol>()
     let cartDataSubject         = PublishSubject<CartDataSource>()
-    let productData             = PublishSubject<[SectionModel<String, ProductData>]>()
+    let productData             = PublishSubject<[SectionModel<String, ProductDataSource>]>()
     
     func setup() {
-        setupProducts()
-        setupCart()
-        subscribeOnCart(withID: userDefault.currentCartID)
+        setupProductDatabase()
+        setupProductDataSource()
     }
     
-    private func subscribeOnCart(withID cartID: String) {
-        
-        cartDatabaseSubject.dispose()
-        
-        network.requestCartKeys { cartKeys in
-            guard let cartKeys = cartKeys, !cartKeys.isEmpty else {
-                self.cartDatabaseSubject.onError(NetworkError.cartNotFound)
-                return
-            }
-            let requestCartID = cartKeys.contains(cartID) ? cartID : cartKeys.first!
-            self.network.subscribeOnCart(forKey: requestCartID) { cart in
-                guard let cart = cart else {
-                    self.cartDatabaseSubject.onError(NetworkError.cartNotFound)
-                    return
-                }
-                self.cartDatabaseSubject.onNext(cart)
-            }
-        }
-    }
-    
-    private func setupCart() {
-        
-        cartDatabaseSubject
-            .subscribe(onNext: { cart in
-                let productKeys = cart.productKeys
-                self.network.requestProducts(forKeys: Array(productKeys))
-                    .bind { products in
-                        let prodDictionary = products.reduce(into: [String: ProductDatabase]()) { $0[$1.ID] = $1 }
-                        if let cartData = CartData(
-                            cart: cart,
-                            products: prodDictionary,
-                            currentUID: self.userDefault.currentUserID) {
-                            self.cartDataSubject.onNext(cartData)
-                        }
-                    }.disposed(by: self.bag)
-            }, onError: { error in
-                print(error)
-            }).disposed(by: bag)
-    }
-    
-    private func setupProducts() {
-        
-        cartDataSubject
+    func setupProductDatabase() {
+        dataManager
+            .cartDatabaseSubject
             .map { Array($0.productKeys) }
-            .bind { [unowned self] productKeys in
+            .subscribe(onNext: { [unowned self] productKeys in
                 self.network
                     .requestProducts(forKeys: productKeys)
                     .bind { self.productSubject.onNext($0) }
                     .disposed(by: self.bag)
-            }.disposed(by: bag)
-        
-        Observable
-            .zip(cartDataSubject, productSubject)
-            .bind { [unowned self] cart, products in
-                let productsModel = self.getProductsData(products: products, cart: cart)
-                let myP = productsModel.filter { $0.myCount > 0 }
-                let otherP = productsModel.filter { $0.myCount == 0 && $0.allCount > 0 }
-                self.productData.onNext([
-                    SectionModel(model: "My products", items: myP),
-                    SectionModel(model: "Other product", items: otherP)
-                ])
-                
-            }.disposed(by: bag)
+            }).disposed(by: bag)
     }
     
-    private func getProductsData(products: [ProductDatabaseProtocol], cart: CartDataSource) -> [ProductData] {
+    func setupProductDataSource() {
+        Observable
+            .zip(dataManager.cartDatabaseSubject.asObserver(), productSubject.asObserver())
+            .compactMap { [unowned self] cartDatabase, productsDatabase in
+                let uid = self.userDefault.currentUserID
+                let prodDictionary = productsDatabase
+                    .reduce(into: [String: ProductDatabase]()) { $0[$1.ID] = $1 }
+                let cartDataSource = CartData(cart: cartDatabase,
+                                              products: prodDictionary,
+                                              currentUID: uid)
+                return cartDataSource
+            }
+            .bind { [unowned self] in self.cartDataSubject.onNext($0) }
+            .disposed(by: bag)
+        
+        Observable
+            .zip(cartDataSubject.asObserver(), productSubject.asObserver())
+            .bind { [unowned self] cart, products in
+                let productsModel = self.getProductsData(products: products, cart: cart)
+                let myProducts = productsModel
+                    .filter { $0.myCount > 0 }
+                    .sorted { $0.myAddedDate < $1.myAddedDate }
+                let otherProducts = productsModel
+                    .filter { $0.myCount == 0 && $0.allCount > 0 }
+                    .sorted { $0.otherAddedDate < $1.otherAddedDate }
+                
+                self.productData.onNext([
+                    SectionModel(model: "My products", items: myProducts),
+                    SectionModel(model: "Other product", items: otherProducts)
+                ])
+            }
+            .disposed(by: bag)
+    }
+
+    private func getProductsData(products: [ProductDatabaseProtocol], cart: CartDataSource) -> [ProductDataSource] {
         
         var productsData = products
             .compactMap { ProductData(product: $0) }
@@ -109,9 +89,16 @@ class CartViewModel {
         
         for customer in cart.customers {
             for prodSKU in customer.value.products {
-                productsData[prodSKU.ID]?.allCount += prodSKU.count
+                guard productsData[prodSKU.ID] != nil else { continue }
+                
+                productsData[prodSKU.ID]!.allCount += prodSKU.count
+                productsData[prodSKU.ID]!.otherAddedDate = min(
+                    productsData[prodSKU.ID]!.otherAddedDate,
+                    prodSKU.addedDate)
+                
                 if customer.key == self.userDefault.currentUserID {
-                    productsData[prodSKU.ID]?.myCount += prodSKU.count
+                    productsData[prodSKU.ID]!.myCount += prodSKU.count
+                    productsData[prodSKU.ID]!.myAddedDate = prodSKU.addedDate
                 }
             }
         }
@@ -119,5 +106,3 @@ class CartViewModel {
         return Array(productsData.values)
     }
 }
-
-
