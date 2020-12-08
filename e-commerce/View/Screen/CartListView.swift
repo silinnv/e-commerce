@@ -23,7 +23,7 @@ class CartListView: UIView {
     }
     
     private func commonInit() {
-        backgroundColor = .orange
+        backgroundColor = .white
         setupTableView()
         setupCreateCartButton()
         setupConstraints()
@@ -44,7 +44,7 @@ class CartListView: UIView {
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 50),
+            tableView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 0),
             tableView.bottomAnchor.constraint(equalTo: bottomAnchor),
             tableView.leadingAnchor.constraint(equalTo: leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: trailingAnchor),

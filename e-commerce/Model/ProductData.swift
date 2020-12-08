@@ -35,6 +35,8 @@ struct ProductData: ProductDataSource {
     var myAddedDate:    Date = Date(timeIntervalSince1970: 0)
     
     var otherAddedDate: Date = Date(timeIntervalSince1970: 0)
+    
+    var productOwner:   ProductOwner = .other
 }
 
 extension ProductData {

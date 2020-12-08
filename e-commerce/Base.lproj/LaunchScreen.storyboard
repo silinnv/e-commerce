@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="15705" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
-    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <device id="retina3_5" orientation="portrait" appearance="light"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15706"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
@@ -12,22 +12,57 @@
             <objects>
                 <viewController id="01J-lp-oVM" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
-                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="slider.horizontal.3" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="Yav-Jf-6mm">
-                                <rect key="frame" x="97" y="344.5" width="220" height="216.5"/>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="plus" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="Yav-Jf-6mm">
+                                <rect key="frame" x="50" y="132" width="220" height="216"/>
                                 <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="220" id="KOK-7J-oqE"/>
                                     <constraint firstAttribute="width" secondItem="Yav-Jf-6mm" secondAttribute="height" multiplier="1:1" id="SMf-su-aYK"/>
                                 </constraints>
                             </imageView>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="VaM-Zw-iAc">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="30"/>
+                                <subviews>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalHuggingPriority="251" text="Остальные продукты" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="ltc-Ld-jbz">
+                                        <rect key="frame" x="20" y="2" width="150" height="21.5"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" priority="500" constant="176" id="FfD-ag-Q5I"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" type="system" weight="medium" pointSize="18"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="1 000 000 ₽" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="uPY-yH-2Jp">
+                                        <rect key="frame" x="190" y="2" width="110" height="22"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="110" id="1sH-ce-QHh"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" type="system" weight="medium" pointSize="18"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                <constraints>
+                                    <constraint firstItem="uPY-yH-2Jp" firstAttribute="top" secondItem="VaM-Zw-iAc" secondAttribute="top" constant="2" id="77e-Qj-k5l"/>
+                                    <constraint firstItem="ltc-Ld-jbz" firstAttribute="leading" secondItem="VaM-Zw-iAc" secondAttribute="leading" constant="20" id="bET-Ze-QfC"/>
+                                    <constraint firstItem="uPY-yH-2Jp" firstAttribute="leading" secondItem="ltc-Ld-jbz" secondAttribute="trailing" constant="20" id="i8a-eh-paA"/>
+                                    <constraint firstItem="ltc-Ld-jbz" firstAttribute="firstBaseline" secondItem="uPY-yH-2Jp" secondAttribute="firstBaseline" id="pMR-DG-1nV"/>
+                                    <constraint firstAttribute="height" constant="30" id="r3c-ws-QVW"/>
+                                    <constraint firstAttribute="trailing" secondItem="uPY-yH-2Jp" secondAttribute="trailing" constant="20" id="xrg-lU-qmS"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemIndigoColor" red="0.34509803919999998" green="0.33725490200000002" blue="0.83921568629999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="Yav-Jf-6mm" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" id="ABd-tb-GSr"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="VaM-Zw-iAc" secondAttribute="trailing" id="BaN-z4-RhH"/>
                             <constraint firstItem="Yav-Jf-6mm" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="DxP-bm-Hw8"/>
+                            <constraint firstItem="VaM-Zw-iAc" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="EIx-SY-b1W"/>
+                            <constraint firstItem="VaM-Zw-iAc" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="FfV-10-f2C"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
@@ -38,6 +73,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="slider.horizontal.3" catalog="system" width="64" height="50"/>
+        <image name="plus" catalog="system" width="64" height="56"/>
     </resources>
 </document>

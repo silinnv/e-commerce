@@ -18,14 +18,18 @@ class CartViewController: UIViewController {
     let bag                 = DisposeBag()
     let userDefault         = UserDefaultService.shared
     
+    var dataSource:         RxTableViewSectionedReloadDataSource<SectionModel<HeaderViewModel, ProductDataSource>>!
+    
     override func loadView() {
         view = cartView
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupView()
-        setupViewModel()
+        viewModel.setup()
+        setupBindView()
+        setupTableView()
+        subscribeOnViewModel()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -38,7 +42,7 @@ class CartViewController: UIViewController {
         navigationController?.setNavigationBarHidden(false, animated: animated)
     }
     
-    func setupView() {
+    func setupBindView() {
         
         cartView
             .cartPickerButton
@@ -59,37 +63,80 @@ class CartViewController: UIViewController {
             }.disposed(by: bag)
     }
     
-    func setupViewModel() {
+    func setupTableView() {
         
-        viewModel.setup()
+        cartView.tableView.estimatedRowHeight = 500
+        cartView.tableView.rowHeight = UITableView.automaticDimension
         
+        cartView.tableView.register(ProductTableViewCell.self, forCellReuseIdentifier: ProductTableViewCell.identifier)
+        
+        dataSource = RxTableViewSectionedReloadDataSource<SectionModel<HeaderViewModel, ProductDataSource>>(
+            configureCell: { (dataSource, tableView, indexPath, item) in
+                let cell = ProductTableViewCell(frame: .zero)
+                
+                cell.nameLabel.text = item.name
+                cell.priceLabel.text = item.price.priceFormat()
+                cell.weightLabel.text = item.weight.priceFormat()
+                cell.stepper.value = item.myCount
+                cell.stepper.stepperState = item.myCount == 0 ? .initial: .normal
+                cell.allPriceLabel.text = item.allPrice.priceFormat()
+                cell.myPriceLabel.text = item.myPrice.priceFormat()
+                
+                cell.stepper
+                    .valueSubject
+                    .distinctUntilChanged()
+                    .throttle(.milliseconds(1000), scheduler: MainScheduler.instance)
+                    .subscribe(onNext: { [weak self] newValue in
+                        self?.viewModel.changeProductCount(productID: item.ID, count: newValue)
+                    }).disposed(by: cell.bag)
+                return cell
+        })
+        
+        cartView.tableView
+            .rx.setDelegate(self)
+            .disposed(by: bag)
+    }
+    
+    func subscribeOnViewModel() {
         viewModel
             .cartDataSubject
             .bind { [unowned self] cart in
                 self.cartView.updateView(with: cart)
             }.disposed(by: bag)
         
-        cartView.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
-        
-        let dataSource = RxTableViewSectionedReloadDataSource<SectionModel<String, ProductDataSource>>(
-            configureCell: { (dataSource, tableView, indexPath, item) -> UITableViewCell in
-                let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
-                cell.textLabel?.text = "\(item.myPrice) \(item.allPrice) " + item.name
-                return cell
-        },
-            titleForHeaderInSection: { dataSource, index in
-                return dataSource.sectionModels[index].model
-        })
-        
-        viewModel.productData.bind(to: self.cartView.tableView.rx.items(dataSource: dataSource)).disposed(by: bag)
+        viewModel
+            .productData
+            .bind(to: self.cartView
+                .tableView
+                .rx.items(dataSource: dataSource))
+            .disposed(by: bag)
     }
     
     private func showCartList(onFullScrean fullScrean: Bool = false) {
         let cartListViewConstroller = CartListViewController()
+        
+        let nc = UINavigationController()
+        nc.viewControllers.append(cartListViewConstroller)
+        let backItem = UIBarButtonItem()
+        backItem.title = "Something Else"
+        nc.navigationItem.backBarButtonItem = backItem
+        
         if fullScrean {
             cartListViewConstroller.modalPresentationStyle = .fullScreen
         }
-        self.navigationController?.showDetailViewController(cartListViewConstroller, sender: nil)
+        cartListViewConstroller.modalTransitionStyle = .coverVertical
+        self.navigationController?.showDetailViewController(nc, sender: nil)
     }
 
+}
+
+extension CartViewController: UITableViewDelegate {
+    
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let model = dataSource[section].model
+        guard model.cartType != .privates else { return UIView() }
+        
+        let headerView = CartSectionHeaderView(data: model)
+        return headerView
+    }
 }

@@ -17,12 +17,15 @@ class DataManager {
         DataManager()
     }()
     
-    private let network     = NetworkService.shared
-    private let userDefault = UserDefaultService.shared
+    private let network         = NetworkService.shared
+    private let userDefault     = UserDefaultService.shared
+    private let bag             = DisposeBag()
     
-    var currentCartID:      String!
-    var cartDatabaseSubject = ReplaySubject<CartDatabaseProtocol>.create(bufferSize: 1)
-    var isLoaded            = BehaviorRelay<Bool>(value: true)
+    var currentCartID:          String!
+    let cartDatabaseSubject     = ReplaySubject<CartDatabaseProtocol>.create(bufferSize: 1)
+    let productDatabaseSubject  = BehaviorRelay<[ProductDatabaseProtocol]>.init(value: [])
+    var productKeys             = Set<String>()
+    var isLoaded                = BehaviorRelay<Bool>(value: true)
     
     // MARK: - Init
     private init() {
@@ -68,6 +71,20 @@ class DataManager {
         cartDatabaseSubject.onNext(newCart)
         let newCartID = newCart.ID
         resubscribeOnCart(withNewCartKey: newCartID)
+    }
+    
+    // MARK: - Product
+    func requestProducts(byKeys newKeys: Set<String>) {
+        let newProductKeys = newKeys.subtracting(productKeys)
+        productKeys = productKeys.union(newProductKeys)
+        
+        network.requestProducts(forKeys: Array(newProductKeys))
+            .subscribe(onNext: { [unowned self] newProducts in
+                for prod in newProducts { print("LOAD", prod.name) }
+                let oldProducts = self.productDatabaseSubject.value
+                let products = newProducts + oldProducts
+                self.productDatabaseSubject.accept(products)
+            }).disposed(by: bag)
     }
     
 }

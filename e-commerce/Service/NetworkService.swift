@@ -148,4 +148,16 @@ class NetworkService {
         .asObservable()
     }
     
+    func updateProductCount(productID: String, newValue: Double) {
+        let prodRef = ref
+            .child("Carts")
+            .child(userDefault.currentCartID)
+            .child("Users")
+            .child(userDefault.currentUserID)
+            .child("Products")
+            .child(productID)
+        
+        prodRef.setValue(["Count": newValue])
+    }
+    
 }

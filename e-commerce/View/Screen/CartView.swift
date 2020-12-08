@@ -38,6 +38,8 @@ class CartView: UIView {
         tableView.tableHeaderView = headerView
         tableView.tableHeaderView?.translatesAutoresizingMaskIntoConstraints = false
         tableView.separatorStyle = .none
+        tableView.sectionHeaderHeight = UITableView.automaticDimension
+        tableView.estimatedSectionHeaderHeight = 1
         add(tableView)
         
         NSLayoutConstraint.activate([

@@ -12,7 +12,7 @@ protocol ProductDatabaseProtocol {
  
     var ID:         String { get }
     
-    var name:       String { get }
+    var name:       String { get set }
     
     var price:      Double { get }
     

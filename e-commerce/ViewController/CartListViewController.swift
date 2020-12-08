@@ -25,16 +25,25 @@ class CartListViewController: UIViewController {
         setupView()
         setupViewModel()
     }
+    
+    @objc
+    func addTapped(_ sender: UIBarButtonItem) {
+        dismissViewController()
+    }
 
     private func setupView() {
+        navigationController?.navigationBar.prefersLargeTitles = true
+        title = "Корзины"
+        
+        let back = UIBarButtonItem(title: "Закрыть", style: .plain, target: self, action: #selector(addTapped))
+        navigationItem.leftBarButtonItems = [back]
+        
         cartListView
             .tableView
             .rx
             .modelSelected(CartDatabaseProtocol.self).bind { [unowned self] cart in
                 self.viewModel.pickCart(cart)
-                DispatchQueue.main.async {
-                    self.dismiss(animated: true, completion: nil)
-                }
+                self.dismissViewController()
             }.disposed(by: bag)
     }
 
@@ -48,17 +57,21 @@ class CartListViewController: UIViewController {
             .cartsDatabaseSubject
             .bind(to:
                 cartListView
-                .tableView
-                .rx
-                .items(
+                .tableView.rx.items(
                     cellIdentifier: "DefaultCell",
                     cellType: UITableViewCell.self)) { (row, model, cell) in
                         cell.textLabel?.text = model.name
                         cell.selectionStyle = .none
             }.disposed(by: bag)
         
-        viewModel.isLoaded.bind { [unowned self] isLoaded in
-            self.cartListView.backgroundColor = isLoaded ? .systemYellow : . systemPurple
+        viewModel.isLoaded.bind { _ in //[unowned self] isLoaded in
+            
         }.disposed(by: bag)
+    }
+    
+    private func dismissViewController() {
+        DispatchQueue.main.async {
+            self.dismiss(animated: true, completion: nil)
+        }
     }
 }

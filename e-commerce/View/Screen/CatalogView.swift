@@ -29,8 +29,8 @@ class HV: UIView {
         let label = UILabel()
         label.text = " "
         label.numberOfLines = 0
-        label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        label.alpha = 0.5
+        label.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+        label.alpha = 0.75
         return label
     }()
     
@@ -55,29 +55,25 @@ class HV: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func setupPickerButton() {
-        add(pickerCartButton)
-    }
-    
     func setupConstraints() {
         NSLayoutConstraint.activate([
             pickerCartButton.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 8),
-            pickerCartButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            pickerCartButton.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: 20),
             pickerCartButton.heightAnchor.constraint(equalToConstant: 30),
             
-            userSettingButton.topAnchor.constraint(equalTo: topAnchor, constant: 6),
-            userSettingButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
+            userSettingButton.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 6),
+            userSettingButton.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -20),
             userSettingButton.heightAnchor.constraint(equalToConstant: 34),
             userSettingButton.widthAnchor.constraint(equalToConstant: 34),
             
             titleLabel.topAnchor.constraint(equalTo: pickerCartButton.bottomAnchor, constant: 10),
-            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 20),
+            titleLabel.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 20),
             
             cartNameLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            cartNameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            cartNameLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
-            cartNameLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8)
+            cartNameLabel.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            cartNameLabel.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            cartNameLabel.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor, constant: -8)
             
         ])
     }
@@ -85,61 +81,31 @@ class HV: UIView {
 
 class CatalogView: UIView {
     
-    let tableView: UITableView = {
-        let tv = UITableView()
-        return tv
-    }()
-    let header = HV()
+    let tableView   = UITableView()
+    let header      = HV()
     
     init() {
         super.init(frame: .zero)
         backgroundColor = .white
         setupTableView()
-        addGrad()
     }
     
     private func setupTableView() {
         
-        let headerView = header
-        headerView.translatesAutoresizingMaskIntoConstraints = false
-        headerView.layoutIfNeeded()
-        
-        tableView.tableHeaderView = headerView
-        
-        tableView.tableHeaderView?.translatesAutoresizingMaskIntoConstraints = false
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(tableView)
-        
+        header.translatesAutoresizingMaskIntoConstraints = false
+        header.layoutIfNeeded()
+        tableView.tableHeaderView = header
+        add(tableView)
         
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
             tableView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            tableView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            tableView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
             
-            headerView.topAnchor.constraint(equalTo: tableView.topAnchor),
-            headerView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            headerView.trailingAnchor.constraint(equalTo: trailingAnchor),
-        ])
-    }
-    
-    func addGrad() {
-        
-        let grad = CAGradientLayer()
-        let whiteColor = UIColor.white
-        let gradView = UIView()
-        grad.colors = [whiteColor.withAlphaComponent(1.0).cgColor, whiteColor.withAlphaComponent(0.0).cgColor]
-        grad.locations = [0.0, 1.0]
-
-        grad.frame = CGRect(x: 0, y: 0, width: 500, height: 12)
-        gradView.layer.addSublayer(grad)
-        add(gradView)
-
-        NSLayoutConstraint.activate([
-            gradView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
-            gradView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            gradView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            gradView.heightAnchor.constraint(equalToConstant: 12)
+            header.topAnchor.constraint(equalTo: tableView.topAnchor),
+            header.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
+            header.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
         ])
     }
     

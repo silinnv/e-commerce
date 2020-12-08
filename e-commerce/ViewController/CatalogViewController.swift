@@ -13,23 +13,25 @@ import Firebase
 
 class CatalogViewController: UIViewController {
 
-    let catalogVIew = CatalogView()
+    let catalogView = CatalogView()
     let viewModel   = CatalogViewModel()
     let bag         = DisposeBag()
     
     override func loadView() {
-        view = catalogVIew
+        view = catalogView
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupViewModel()
         setupView()
+        setupTableView()
+        subscribeOnViewModel()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        catalogView.addGradient()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -38,20 +40,27 @@ class CatalogViewController: UIViewController {
     }
     
     func setupView() {
-        catalogVIew.header
+        catalogView.header
             .pickerCartButton
             .rx.tap.bind { [unowned self] in
                 self.showCartList()
             }.disposed(by: bag)
     }
     
-    func setupViewModel() {
+    func setupTableView() {
+        
+        catalogView.tableView
+            .rx.setDelegate(self)
+            .disposed(by: bag)
+    }
+    
+    func subscribeOnViewModel() {
         
         viewModel.cartSubject
             .subscribe(onNext: { [unowned self] cart in
-                self.catalogVIew.header.cartNameLabel.text = cart.name
+                self.catalogView.header.cartNameLabel.text = cart.name
                 DispatchQueue.main.async {
-                    self.catalogVIew.tableView.reloadData()
+                    self.catalogView.tableView.reloadData()
                 }
             }).disposed(by: bag)
     }
@@ -63,7 +72,8 @@ class CatalogViewController: UIViewController {
         }
         self.navigationController?.showDetailViewController(cartListViewConstroller, sender: nil)
     }
-    
-    
+}
 
+extension CatalogViewController: UITableViewDelegate {
+    
 }
