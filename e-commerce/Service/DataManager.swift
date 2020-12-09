@@ -17,24 +17,90 @@ class DataManager {
         DataManager()
     }()
     
-    private let network         = NetworkService.shared
-    private let userDefault     = UserDefaultService.shared
-    private let bag             = DisposeBag()
+    private let network             = NetworkService.shared
+    private let userDefault         = UserDefaultService.shared
+    private let bag                 = DisposeBag()
     
-    var currentCartID:          String!
-    let cartDatabaseSubject     = ReplaySubject<CartDatabaseProtocol>.create(bufferSize: 1)
-    let productDatabaseSubject  = BehaviorRelay<[ProductDatabaseProtocol]>.init(value: [])
-    var productKeys             = Set<String>()
-    var isLoaded                = BehaviorRelay<Bool>(value: true)
+    let cartDatabaseSubject         = ReplaySubject<CartDatabaseProtocol>.create(bufferSize: 1)
+    let productDatabaseSubject      = BehaviorRelay<[String: ProductDatabaseProtocol]>.init(value: [:])
+    
+    let cartSubject                 = ReplaySubject<CartDataSource>.create(bufferSize: 1)
+    let productsSubject             = BehaviorRelay<[ProductDataSource]>.init(value: [])
+    
+    var productKeysBuff             = Set<String>()
+    var isLoaded                    = BehaviorRelay<Bool>(value: true)
+    
+    private var myProductKeys:      Set<String>? = nil
     
     // MARK: - Init
     private init() {
-        currentCartID = userDefault.currentCartID
-        initSubscribeCart(byKey: currentCartID)
+        setupSubscribe()
+        initSubscribeCart(byKey: userDefault.currentCartID)
+    }
+    
+    func setupSubscribe() {
+        
+        cartDatabaseSubject
+            .subscribe(onNext: { [unowned self] cart in
+                self.setMyProductKeys(cart: cart)
+            }).disposed(by: bag)
+        
+        Observable
+            .combineLatest(
+                cartSubject.asObserver(),
+                productDatabaseSubject.asObservable().filter { $0.count > 0 }
+            )
+            .bind { [unowned self] cart, productsDatabseDictionary in
+                guard let myProductKeys = self.myProductKeys else { return }
+                
+                var productsData = productsDatabseDictionary.values
+                    .compactMap { ProductData(product: $0) }
+                    .reduce(into: [String: ProductDataSource]()) { $0[$1.ID] = $1 }
+                
+                for customer in cart.customers {
+                    for customerProduct in customer.value.products {
+                        
+                        guard var productData = productsData[customerProduct.ID] else { continue }
+                        
+                        let uid = self.userDefault.currentUserID
+                        let olderAddedDate = min(productData.otherAddedDate, customerProduct.addedDate)
+                        
+                        productData.allCount += customerProduct.count
+                        productData.otherAddedDate = olderAddedDate
+                        
+                        if myProductKeys.contains(productData.ID) {
+                            productData.productOwner = .me
+                            productData.myAddedDate = customerProduct.addedDate
+                        } else {
+                            productData.productOwner = .other
+                        }
+                        
+                        if customer.key == uid {
+                            productData.myCount = customerProduct.count
+                        }
+                        
+                        productsData[customerProduct.ID] = productData
+                    }
+                }
+                
+                self.productsSubject.accept(Array(productsData.values))
+                
+            }
+            .disposed(by: bag)
+        
+        Observable
+            .combineLatest(cartDatabaseSubject.asObserver(), productDatabaseSubject.asObservable())
+            .compactMap { [unowned self] cart, products in
+                let uid = self.userDefault.currentUserID
+                return CartData(cart: cart, products: products, currentUID: uid)
+            }
+            .subscribe(onNext: { [unowned self] in self.cartSubject.onNext($0) })
+            .disposed(by: bag)
     }
     
     func initSubscribeCart(byKey cartID: String) {
-        getRequestCartID(byKey: currentCartID) { [unowned self] cartID in
+        resetProducts()
+        getRequestCartID(byKey: userDefault.currentCartID) { [unowned self] cartID in
             guard let requestCartID = cartID else { return }
             self.subscribeOnCart(forKey: requestCartID)
         }
@@ -42,15 +108,17 @@ class DataManager {
     
     func subscribeOnCart(forKey key: String) {
         isLoaded.accept(true)
+        
         network.subscribeOnCart(forKey: key) { [unowned self] cart in
             self.isLoaded.accept(false)
-            self.currentCartID = cart.ID
             self.userDefault.currentCartID = cart.ID
+            let cartProductKeys = cart.productKeys
+
+            self.requestProducts(byKeys: cartProductKeys)
             self.cartDatabaseSubject.onNext(cart)
         }
     }
     
-    // MARK: - Cart
     func getRequestCartID(byKey cartID: String, _ complition: @escaping (String?) -> Void) {
         isLoaded.accept(true)
         network.requestCartKeys { [unowned self] cartKeys in
@@ -63,28 +131,50 @@ class DataManager {
     
     func resubscribeOnCart(withNewCartKey newCartID: String) {
         guard !newCartID.isEmpty else { return }
-        network.unsubscribeFromCart(byKey: currentCartID)
+        network.unsubscribeFromCart(byKey: userDefault.currentCartID)
         subscribeOnCart(forKey: newCartID)
     }
     
     func resubscribeOnCart(withNewCart newCart: CartDatabaseProtocol) {
-        cartDatabaseSubject.onNext(newCart)
+//        cartDatabaseSubject.onNext(newCart)
         let newCartID = newCart.ID
+        resetProducts()
         resubscribeOnCart(withNewCartKey: newCartID)
     }
     
-    // MARK: - Product
     func requestProducts(byKeys newKeys: Set<String>) {
-        let newProductKeys = newKeys.subtracting(productKeys)
-        productKeys = productKeys.union(newProductKeys)
+
+        let newProductKeys = newKeys.subtracting(productKeysBuff)
+        productKeysBuff = productKeysBuff.union(newProductKeys)
         
-        network.requestProducts(forKeys: Array(newProductKeys))
+        network
+            .requestProducts(forKeys: Array(newProductKeys))
             .subscribe(onNext: { [unowned self] newProducts in
-                for prod in newProducts { print("LOAD", prod.name) }
-                let oldProducts = self.productDatabaseSubject.value
-                let products = newProducts + oldProducts
-                self.productDatabaseSubject.accept(products)
+                var productDictionary = self.productDatabaseSubject.value
+                let newProductDictionary = newProducts
+                    .reduce(into: [String: ProductDatabaseProtocol]()) { $0[$1.ID] = $1 }
+                for newProduct in newProductDictionary {
+                    productDictionary[newProduct.key] = newProduct.value
+                }
+                self.productDatabaseSubject.accept(productDictionary)
             }).disposed(by: bag)
     }
     
+    func resetProducts() {
+        productKeysBuff = Set<String>()
+        myProductKeys = nil
+    }
+    
+    func setMyProductKeys(cart: CartDatabaseProtocol) {
+        let uid = userDefault.currentUserID
+        
+        if let me = cart.customers[uid],
+            myProductKeys == nil {
+            let myKeys = me.products
+                .filter { $0.count > 0 }
+                .reduce(into: Set<String>()) { $0.insert($1.ID) }
+            myProductKeys = myKeys
+        }
+    }
+
 }

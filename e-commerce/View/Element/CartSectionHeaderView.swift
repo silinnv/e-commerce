@@ -66,7 +66,7 @@ class CartSectionHeaderView: UIView {
         NSLayoutConstraint.activate([
             bg.heightAnchor.constraint(equalToConstant: 48),
             bg.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: 8),
-            bg.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: 20),
+            bg.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 20),
             bg.centerYAnchor.constraint(equalTo: centerYAnchor, constant: 4)
         ])
     }

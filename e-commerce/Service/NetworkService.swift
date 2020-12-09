@@ -99,11 +99,8 @@ class NetworkService {
     func subscribeOnCart(forKey key: String, _ complition: @escaping (CartDatabaseProtocol) -> Void) {
         
         guard !key.isEmpty else { return }
+        let refCart = self.ref.child("Carts").child(key)
         
-        let refCarts = self.ref.child("Carts")
-        let refCart = refCarts.child(key)
-        
-        refCarts.removeAllObservers()
         refCart.observe(.value) { snapshot in
             if let data = snapshot.value as? [String: Any],
                 let cart = CartDatabase(key: key, dictionary: data) {
@@ -148,7 +145,7 @@ class NetworkService {
         .asObservable()
     }
     
-    func updateProductCount(productID: String, newValue: Double) {
+    func updateProduct(productID: String, newValue: Double, addedDate: Int) {
         let prodRef = ref
             .child("Carts")
             .child(userDefault.currentCartID)
@@ -156,8 +153,8 @@ class NetworkService {
             .child(userDefault.currentUserID)
             .child("Products")
             .child(productID)
-        
-        prodRef.setValue(["Count": newValue])
+
+        prodRef.setValue(["Count": newValue, "AddedDate": addedDate])
     }
     
 }

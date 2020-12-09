@@ -21,11 +21,6 @@ class CatalogViewModel {
             .subscribe(onNext: { cart in
                 self.cartSubject.onNext(cart)
             }).disposed(by: bag)
-        
-        dataManager
-            .isLoaded
-            .bind { print( $0 ? "load start\n\n\n\n" : "end load\n\n\n\n") }
-            .disposed(by: bag)
     }
     
 }

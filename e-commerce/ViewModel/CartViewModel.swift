@@ -32,53 +32,37 @@ class CartViewModel {
     private let network         = NetworkService.shared
     private let dataManager     = DataManager.shared
 
-    let cartDataSubject         = PublishSubject<CartDataSource>()
     let productData             = PublishSubject<[SectionModel<HeaderViewModel, ProductDataSource>]>()
+    let cartDataSubject         : ReplaySubject<CartDataSource>!
+    
+    init() {
+        cartDataSubject = dataManager.cartSubject
+    }
     
     // MARK: - Setup
     func setup() {
-        setupProductDatabase()
         setupProductDataSource()
-    }
-    
-    func setupProductDatabase() {
-        
-        dataManager
-            .cartDatabaseSubject
-            .map { $0.productKeys }
-            .subscribe(onNext: { [unowned self] productKeys in
-                self.dataManager.requestProducts(byKeys: productKeys)
-            }).disposed(by: bag)
     }
     
     func setupProductDataSource() {
         
         Observable
-            .combineLatest(dataManager.cartDatabaseSubject.asObserver(), dataManager.productDatabaseSubject.asObservable())
-            .compactMap { [unowned self] cart, products in
-                
-                print(cart)
-                
-                let uid = self.userDefault.currentUserID
-                let productDictionary = products.reduce(into: [String: ProductDatabase]()) { $0[$1.ID] = $1 }
-                let cartDataSource = CartData(cart: cart, products: productDictionary, currentUID: uid)
-                return (cartDataSource)
-            }
-            .bind { [unowned self] in self.cartDataSubject.onNext($0) }
-            .disposed(by: bag)
-        
-        Observable
-            .combineLatest(cartDataSubject.asObserver(), dataManager.productDatabaseSubject.asObservable())
-            .bind { [unowned self] cart, products in
-                let productsModel = self.getProductsData(products: products, cart: cart)
-                let myProducts = productsModel
-                    .filter { $0.productOwner == .me }
-                    .sorted { $0.myAddedDate < $1.myAddedDate }
-                let otherProducts = productsModel
-                    .filter { $0.productOwner == .other && $0.allCount > 0 }
-                    .sorted { $0.otherAddedDate < $1.otherAddedDate }
+            .combineLatest(
+                dataManager
+                    .cartSubject.asObserver(),
+                dataManager
+                    .productsSubject.asObservable())
+            .bind { cart, products in
+                let myProducts = products
+                    .filter { $0.productOwner == .me}
+                    .sorted { $0.name < $1.name }
+                let otherProducts = products
+                    .filter { $0.productOwner == .other }
+                    .sorted { $0.name < $1.name }
                 
                 let myProductPrice = myProducts.reduce(0, { $0 + $1.myPrice })
+                
+                // TODO: Fix this. When im added product from other prod list, its my price, no other
                 let otherProductPrice = otherProducts.reduce(0, { $0 + $1.allPrice })
                 
                 let myProductHeader = HeaderViewModel(title: "Мои продукты",
@@ -92,52 +76,18 @@ class CartViewModel {
                     SectionModel(model: myProductHeader, items: myProducts),
                     SectionModel(model: otherProductHeader, items: otherProducts)
                 ])
-        }
-        .disposed(by: bag)
+                
+            }.disposed(by: bag)
     }
 
-    private func getProductsData(products: [ProductDatabaseProtocol], cart: CartDataSource) -> [ProductDataSource] {
 
-        var productsDictionary = products
-            .compactMap { ProductData(product: $0) }
-            .reduce(into: [String: ProductData]()) { resultDictionary, product in
-                resultDictionary[product.ID] = product
-        }
-
-        for customer in cart.customers {
-            for prodSKU in customer.value.products {
-                guard productsDictionary[prodSKU.ID] != nil else { continue }
-                
-                let olderAddedDate = min(productsDictionary[prodSKU.ID]!.otherAddedDate, prodSKU.addedDate)
-                productsDictionary[prodSKU.ID]!.otherAddedDate = olderAddedDate
-                productsDictionary[prodSKU.ID]!.allCount += prodSKU.count
-                
-                if customer.key == self.userDefault.currentUserID {
-                    productsDictionary[prodSKU.ID]!.productOwner = .me
-                    productsDictionary[prodSKU.ID]!.myCount += prodSKU.count
-                    productsDictionary[prodSKU.ID]!.myAddedDate = prodSKU.addedDate
-                } else if productsDictionary[prodSKU.ID]!.productOwner != .me {
-                    productsDictionary[prodSKU.ID]!.productOwner = .other
-                }
-            }
-        }
-        
-        let productData: [ProductDataSource] = productsDictionary.map { prod in
-            let oldName = prod.value.name
-            var newProduct = prod.value
-            if let range = oldName.range(of: "  ") {
-                let newName = oldName[oldName.startIndex ..< range.lowerBound]
-                newProduct.name = String(newName)
-            }
-            return newProduct
-        }
-
-        return Array(productData)
-    }
     
     // MARK: - Bussines Logic
-    func changeProductCount(productID: String, count: Double) {
-        print("ref/Carts/\(userDefault.currentCartID)/Users/\(userDefault.currentUserID)/Products/\(productID)/Count = \(count)")
-        network.updateProductCount(productID: productID, newValue: count)
+    func changeProductCount(product: ProductDataSource, count: Double) {
+        print("cartVM: CHANGE \(product.ID) : \(count) count")
+
+        // TODO: Fix date
+        
+        network.updateProduct(productID: product.ID, newValue: count, addedDate: Int(product.myAddedDate.timeIntervalSince1970))
     }
 }

@@ -49,21 +49,20 @@ class Stepper: UIView {
     
     private let widthStepper: CGFloat = 70
     private let heightStrpper: CGFloat = 24
-    private let animationDuration = 0.16
+    private let animationDuration = 0 //0.16
     
     // MARK: - Init
-    public override init(frame: CGRect) {
-        super.init(frame: frame)
-        commonInit()
+    public init(initValue: Double = 0.0) {
+        super.init(frame: .zero)
+        commonInit(initValue: initValue)
     }
     
-    public required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
-        commonInit()
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
     // MARK: - View setup
-    private func commonInit() {
+    private func commonInit(initValue: Double) {
         setupLabel()
         setupButton(decreaseButton, with: "minus")
         decreaseButton.addTarget(nil, action: #selector(decrease(_:)), for: .touchUpInside)
@@ -101,8 +100,7 @@ class Stepper: UIView {
             imageView.widthAnchor.constraint(equalToConstant: 14),
             imageView.heightAnchor.constraint(equalToConstant: 18)
         ])
-//        imageView.backgroundColor = .systemPink    
-//        button.setImage(image, for: .normal)
+
     }
     
     private func setupStack() {
@@ -155,7 +153,7 @@ class Stepper: UIView {
     private func checkStepperState() {
         switch stepperState {
         case .normal where valueLabel.alpha != 1:
-            UIView.animate(withDuration: animationDuration) {
+            UIView.animate(withDuration: TimeInterval(animationDuration)) {
                 self.increaseButton.transform = CGAffineTransform(translationX: 0, y: 0)
                 self.decreaseButton.transform = CGAffineTransform(scaleX: 1, y: 1)
                 self.valueLabel.transform = CGAffineTransform(scaleX: 1, y: 1)
@@ -164,7 +162,7 @@ class Stepper: UIView {
                 self.valueLabel.alpha = 1
             }
         case .initial where valueLabel.alpha != 0:
-            UIView.animate(withDuration: animationDuration) {
+            UIView.animate(withDuration: TimeInterval(animationDuration)) {
                 let translationX = -1 * self.widthStepper / 3
                 self.increaseButton.transform = CGAffineTransform(translationX: translationX , y: 0)
                 self.decreaseButton.transform = CGAffineTransform(scaleX: 0.4, y: 0.4)

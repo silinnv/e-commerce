@@ -26,10 +26,11 @@ class CartViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        viewModel.setup()
+        
         setupBindView()
         setupTableView()
         subscribeOnViewModel()
+        viewModel.setup()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -72,23 +73,26 @@ class CartViewController: UIViewController {
         
         dataSource = RxTableViewSectionedReloadDataSource<SectionModel<HeaderViewModel, ProductDataSource>>(
             configureCell: { (dataSource, tableView, indexPath, item) in
+                
                 let cell = ProductTableViewCell(frame: .zero)
                 
-                cell.nameLabel.text = item.name
-                cell.priceLabel.text = item.price.priceFormat()
-                cell.weightLabel.text = item.weight.priceFormat()
-                cell.stepper.value = item.myCount
-                cell.stepper.stepperState = item.myCount == 0 ? .initial: .normal
-                cell.allPriceLabel.text = item.allPrice.priceFormat()
-                cell.myPriceLabel.text = item.myPrice.priceFormat()
+                cell.setup(data: item)
                 
                 cell.stepper
                     .valueSubject
-                    .distinctUntilChanged()
                     .throttle(.milliseconds(1000), scheduler: MainScheduler.instance)
                     .subscribe(onNext: { [weak self] newValue in
-                        self?.viewModel.changeProductCount(productID: item.ID, count: newValue)
+                        self?.viewModel.changeProductCount(product: item, count: newValue)
                     }).disposed(by: cell.bag)
+                
+//                cell.stepper
+//                    .valueSubject
+//                    .distinctUntilChanged()
+//                    .throttle(.milliseconds(1000), scheduler: MainScheduler.instance)
+//                    .subscribe(onNext: { [weak self] newValue in
+//                        self?.viewModel.changeProductCount(product: item.ID, count: newValue)
+//                    }).disposed(by: cell.bag)
+                
                 return cell
         })
         

@@ -14,9 +14,9 @@ enum ProductOwner {
 
 protocol ProductDataSource: ProductDatabaseProtocol {
 
-    var myCount:        Double       { get }
+    var myCount:        Double       { get set }
 
-    var allCount:       Double       { get }
+    var allCount:       Double       { get set }
 
     var myPrice:        Double       { get }
 
@@ -26,9 +26,9 @@ protocol ProductDataSource: ProductDatabaseProtocol {
 
     var allWeight:      Double       { get }
 
-    var myAddedDate:    Date         { get }
+    var myAddedDate:    Date         { get set }
 
-    var otherAddedDate: Date         { get }
+    var otherAddedDate: Date         { get set }
     
-    var productOwner:   ProductOwner { get }
+    var productOwner:   ProductOwner { get set }
 }

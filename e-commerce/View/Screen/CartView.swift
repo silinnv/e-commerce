@@ -11,9 +11,10 @@ import UIKit
 class CartView: UIView {
     
     let tableView           = UITableView()
+    
     let headerView          : CartHeaderTableView = {
         let header = CartHeaderTableView()
-        header.backgroundColor = .white
+//        header.backgroundColor = .white
         return header
     }()
     
@@ -35,6 +36,7 @@ class CartView: UIView {
     }
     
     private func commonInit(isCompactMode: Bool) {
+        tableView.backgroundColor = .white
         tableView.tableHeaderView = headerView
         tableView.tableHeaderView?.translatesAutoresizingMaskIntoConstraints = false
         tableView.separatorStyle = .none

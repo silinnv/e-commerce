@@ -26,6 +26,19 @@ class CatalogViewController: UIViewController {
         setupView()
         setupTableView()
         subscribeOnViewModel()
+        
+        let ref = Database.database().reference()
+        let refTest = ref.child("H1")
+        refTest.child("H2_U").removeAllObservers()
+        
+        refTest.observe(.value) { snap in
+            if let data = snap.value as? [String: Any] {
+                print(data)
+            }
+        }
+        
+        
+        
     }
     
     override func viewWillAppear(_ animated: Bool) {

@@ -20,6 +20,8 @@ class CartHeaderTableView: UIView {
     
     init() {
         super.init(frame: .zero)
+        backgroundColor = .white
+        layer.cornerRadius = 18
         commonInit()
     }
     
