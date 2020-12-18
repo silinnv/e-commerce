@@ -29,6 +29,11 @@ extension CartDatabaseProtocol {
             }
     }
     
+    func productKeys(forCustomer customerID: String) -> Set<String> {
+        guard let customer = customers[customerID] else { return Set<String>() }
+        return customer.productKeys
+    }
+    
     func price(forCustomer customerID: String, withProducts productDictionary: [String: ProductDatabaseProtocol]) -> Double {
         guard let customer = customers[customerID] else { return .zero }
         return customer.totalPriceOfProducts(for: productDictionary)

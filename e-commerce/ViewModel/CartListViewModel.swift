@@ -15,7 +15,7 @@ class CartListViewModel {
     private let bag             = DisposeBag()
     private let network         = NetworkService.shared
     private let userDefault     = UserDefaultService.shared
-    private let dataManager     = DataManager.shared
+    private let dataManager     = TestDataManager002.shared
     
     let isLoaded                = BehaviorSubject<Bool>(value: true)
     let cartsDatabaseSubject    = PublishRelay<[CartDatabaseProtocol]>()

@@ -10,9 +10,9 @@ import UIKit
 
 class CartHeaderTableView: UIView {
     
-    let pickerCartButton    = ECButton()
-    let settingButton       = ECButton()
-    let userSettingButton   = ECButton()
+    let pickerCartButton    = UIButton(type: .system)
+    let settingButton       = UIButton(type: .system)
+    let userSettingButton   = UIButton(type: .system)
     let titleLabel          = UILabel()
     let userCountLabel      = UILabel()
     let myPriceLabel        = UILabel()
@@ -139,5 +139,17 @@ extension CartHeaderTableView {
         }
         titleLabel.text         = cart.name
         myPriceLabel.text       = String(format: "%.0lf", cart.myPrice)
+    }
+    
+    convenience init(with cartData: CartControllerData) {
+        self.init()
+        updateView(withData: cartData)
+    }
+    
+    func updateView(withData cart: CartControllerData) {
+        titleLabel.text     = cart.name
+        userCountLabel.text = cart.subtitle
+        myPriceLabel.text   = cart.myPrice
+        fullPriceLabel.text = cart.allPrice
     }
 }

@@ -9,6 +9,7 @@
 import UIKit
 import RxSwift
 import RxCocoa
+import RxDataSources
 import Firebase
 
 class CatalogViewController: UIViewController {
@@ -16,6 +17,8 @@ class CatalogViewController: UIViewController {
     let catalogView = CatalogView()
     let viewModel   = CatalogViewModel()
     let bag         = DisposeBag()
+    
+    var catalogData = [Category]()
     
     override func loadView() {
         view = catalogView
@@ -27,18 +30,8 @@ class CatalogViewController: UIViewController {
         setupTableView()
         subscribeOnViewModel()
         
-        let ref = Database.database().reference()
-        let refTest = ref.child("H1")
-        refTest.child("H2_U").removeAllObservers()
-        
-        refTest.observe(.value) { snap in
-            if let data = snap.value as? [String: Any] {
-                print(data)
-            }
-        }
-        
-        
-        
+        test()
+        viewModel.setup()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -52,11 +45,34 @@ class CatalogViewController: UIViewController {
         navigationController?.setNavigationBarHidden(false, animated: animated)
     }
     
+    func test() {
+        catalogView.tableView.dataSource = self
+        catalogView.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        catalogView.tableView.register(CategoryTableViewCell.self, forCellReuseIdentifier: CategoryTableViewCell.identifier)
+        catalogView.tableView.register(SubCategoryTableViewCell.self, forCellReuseIdentifier: SubCategoryTableViewCell.identifier)
+        
+        viewModel.catalogSubject.subscribe(onNext: { [weak self] categories in
+            self?.catalogData = categories
+            DispatchQueue.main.async {
+                self?.catalogView.tableView.reloadData()
+            }
+        }).disposed(by: bag)
+    }
+    
     func setupView() {
+        
+        navigationItem.title = catalogView.header.titleLabel.text
+        
         catalogView.header
             .pickerCartButton
             .rx.tap.bind { [unowned self] in
                 self.showCartList()
+            }.disposed(by: bag)
+        
+        catalogView.header
+            .userSettingButton
+            .rx.tap.bind { [unowned self] in
+                self.pushProfileSetting()
             }.disposed(by: bag)
     }
     
@@ -85,8 +101,61 @@ class CatalogViewController: UIViewController {
         }
         self.navigationController?.showDetailViewController(cartListViewConstroller, sender: nil)
     }
+    
+    private func pushSubCategoty(withData data: SubCategoty) {
+        let subCategoryViewController = SubCategoryViewController()
+        subCategoryViewController.title = data.header
+        subCategoryViewController.viewModel.productKeys = data.productKeys
+        self.navigationController?.pushViewController(subCategoryViewController, animated: true)
+    }
+    
+    private func pushProfileSetting() {
+        let profileSettingViewController = PrifileSettingViewController()
+        self.navigationController?.pushViewController(profileSettingViewController, animated: true)
+    }
 }
 
-extension CatalogViewController: UITableViewDelegate {
+extension CatalogViewController: UITableViewDataSource, UITableViewDelegate {
+    
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return catalogData.count
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if catalogData[section].isOpened {
+            return catalogData[section].subCategories.count + 1
+        } else {
+            return 1
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
+        
+        if indexPath.row == 0 {
+            let cell = tableView.dequeueReusableCell(withIdentifier: CategoryTableViewCell.identifier) as! CategoryTableViewCell
+            cell.setup(data: catalogData[indexPath.section])
+            cell.selectionStyle = .none
+            return cell
+        } else {
+            let cell = tableView.dequeueReusableCell(withIdentifier: SubCategoryTableViewCell.identifier) as! SubCategoryTableViewCell
+            cell.setup(data: catalogData[indexPath.section].subCategories[indexPath.row - 1])
+            cell.selectionStyle = .none
+            return cell
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        if indexPath.row == 0 {
+            catalogData[indexPath.section].isOpened = !catalogData[indexPath.section].isOpened
+            let section = IndexSet.init(integer: indexPath.section)
+            tableView.reloadSections(section, with: .none)
+        } else {
+            let subCategoryData = catalogData[indexPath.section].subCategories[indexPath.row - 1]
+            pushSubCategoty(withData: subCategoryData)
+        }
+    }
+    
     
 }

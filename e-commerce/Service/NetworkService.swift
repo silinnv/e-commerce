@@ -117,13 +117,15 @@ class NetworkService {
     }
     
     // MARK: - Product
-    func requestProduct(forKey key: String, _ complition: @escaping (ProductDatabaseProtocol) -> Void) {
+    func requestProduct(forKey key: String, _ complition: @escaping (ProductDatabaseProtocol?) -> Void) {
         let refProduct = self.ref.child("Products").child(key)
         
         refProduct.observeSingleEvent(of: .value) { snapshot in
             if let data = snapshot.value as? [String: Any],
                 let product = ProductDatabase(key: key, dictionary: data) {
                 complition(product)
+            } else {
+                complition(nil)
             }
         }
     }
@@ -135,8 +137,12 @@ class NetworkService {
             for key in keys {
                 self.requestProduct(forKey: key) { product in
                     productCounter += 1
-                    observer.onNext(product)
-                    if productCounter == keys.count { observer.onCompleted() }
+                    if let product = product {
+                        observer.onNext(product)
+                    }
+                    if productCounter == keys.count {
+                        observer.onCompleted()
+                    }
                 }
             }
             return Disposables.create()
@@ -155,6 +161,16 @@ class NetworkService {
             .child(productID)
 
         prodRef.setValue(["Count": newValue, "AddedDate": addedDate])
+    }
+    
+    // Catalog
+    func requestCatalog(_ complition: @escaping ([Category]) -> Void) {
+        let catalogRef = ref.child("Catalog")
+        catalogRef.observeSingleEvent(of: .value) { snapshot in
+            guard let data = snapshot.value as? [String: [String: Any]] else { return }
+            let categories = data.compactMap { Category(key: $0.key, dictionary: $0.value) }
+            complition(categories)
+        }
     }
     
 }

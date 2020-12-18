@@ -92,6 +92,7 @@ class CatalogView: UIView {
     
     private func setupTableView() {
         
+        tableView.separatorStyle = .none
         header.translatesAutoresizingMaskIntoConstraints = false
         header.layoutIfNeeded()
         tableView.tableHeaderView = header

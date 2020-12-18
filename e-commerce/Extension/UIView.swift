@@ -36,7 +36,7 @@ extension UIView {
         
         grad.colors = [whiteColor.withAlphaComponent(1.0).cgColor, whiteColor.withAlphaComponent(0.0).cgColor]
         grad.locations = [0.0, 1.0]
-        grad.frame = CGRect(x: 0, y: 0, width: widthSize, height: 12)
+        grad.frame = CGRect(x: 0, y: 0, width: widthSize, height: 16)
         
         gradView.layer.addSublayer(grad)
         gradView.backgroundColor = .clear
@@ -46,7 +46,7 @@ extension UIView {
             gradView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
             gradView.leadingAnchor.constraint(equalTo: leadingAnchor),
             gradView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            gradView.heightAnchor.constraint(equalToConstant: 12)
+            gradView.heightAnchor.constraint(equalToConstant: 16)
         ])
     }
 }

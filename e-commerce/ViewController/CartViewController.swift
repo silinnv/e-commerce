@@ -14,11 +14,13 @@ import RxDataSources
 class CartViewController: UIViewController {
     
     let cartView            = CartView()
-    let viewModel           = CartViewModel()
+    let testVM              = CartViewModel2()
+    
     let bag                 = DisposeBag()
     let userDefault         = UserDefaultService.shared
     
-    var dataSource:         RxTableViewSectionedReloadDataSource<SectionModel<HeaderViewModel, ProductDataSource>>!
+    var cartData:           CartControllerData!
+    var dataSource:         RxTableViewSectionedReloadDataSource<SectionModel<HeaderSectionProductsData, ProductDataSource>>!
     
     override func loadView() {
         view = cartView
@@ -27,10 +29,10 @@ class CartViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        setupBindView()
+        setupBindingView()
         setupTableView()
         subscribeOnViewModel()
-        viewModel.setup()
+        testVM.setup()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -43,7 +45,7 @@ class CartViewController: UIViewController {
         navigationController?.setNavigationBarHidden(false, animated: animated)
     }
     
-    func setupBindView() {
+    func setupBindingView() {
         
         cartView
             .cartPickerButton
@@ -65,34 +67,25 @@ class CartViewController: UIViewController {
     }
     
     func setupTableView() {
-        
         cartView.tableView.estimatedRowHeight = 500
         cartView.tableView.rowHeight = UITableView.automaticDimension
         
         cartView.tableView.register(ProductTableViewCell.self, forCellReuseIdentifier: ProductTableViewCell.identifier)
         
-        dataSource = RxTableViewSectionedReloadDataSource<SectionModel<HeaderViewModel, ProductDataSource>>(
+        dataSource = RxTableViewSectionedReloadDataSource<SectionModel<HeaderSectionProductsData, ProductDataSource>>(
             configureCell: { (dataSource, tableView, indexPath, item) in
-                
-                let cell = ProductTableViewCell(frame: .zero)
-                
-                cell.setup(data: item)
+
+//                let cell = tableView.dequeueReusableCell(withIdentifier: ProductTableViewCell.identifier) as! ProductTableViewCell
+                let cell = ProductTableViewCell()
                 
                 cell.stepper
                     .valueSubject
                     .throttle(.milliseconds(1000), scheduler: MainScheduler.instance)
                     .subscribe(onNext: { [weak self] newValue in
-                        self?.viewModel.changeProductCount(product: item, count: newValue)
+                        self?.testVM.changeProductCount(product: item, count: newValue)
                     }).disposed(by: cell.bag)
-                
-//                cell.stepper
-//                    .valueSubject
-//                    .distinctUntilChanged()
-//                    .throttle(.milliseconds(1000), scheduler: MainScheduler.instance)
-//                    .subscribe(onNext: { [weak self] newValue in
-//                        self?.viewModel.changeProductCount(product: item.ID, count: newValue)
-//                    }).disposed(by: cell.bag)
-                
+                cell.setup(data: item)
+                cell.selectionStyle = .none
                 return cell
         })
         
@@ -102,17 +95,19 @@ class CartViewController: UIViewController {
     }
     
     func subscribeOnViewModel() {
-        viewModel
-            .cartDataSubject
-            .bind { [unowned self] cart in
-                self.cartView.updateView(with: cart)
-            }.disposed(by: bag)
         
-        viewModel
-            .productData
-            .bind(to: self.cartView
+        testVM
+            .productData.bind(to: cartView
                 .tableView
                 .rx.items(dataSource: dataSource))
+            .disposed(by: bag)
+        
+        testVM
+            .cartControllerData
+            .bind { [unowned self] cartData in
+                self.cartData = cartData
+                self.cartView.updateView(withData: cartData)
+            }
             .disposed(by: bag)
     }
     
@@ -121,10 +116,6 @@ class CartViewController: UIViewController {
         
         let nc = UINavigationController()
         nc.viewControllers.append(cartListViewConstroller)
-        let backItem = UIBarButtonItem()
-        backItem.title = "Something Else"
-        nc.navigationItem.backBarButtonItem = backItem
-        
         if fullScrean {
             cartListViewConstroller.modalPresentationStyle = .fullScreen
         }
@@ -138,8 +129,9 @@ extension CartViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         let model = dataSource[section].model
-        guard model.cartType != .privates else { return UIView() }
-        
+        if cartData.cartType == .privates {
+            return UIView()
+        }
         let headerView = CartSectionHeaderView(data: model)
         return headerView
     }

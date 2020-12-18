@@ -16,9 +16,9 @@ class ProductTableViewCell: UITableViewCell {
     
     let bag = DisposeBag()
     
-    let images: UIImageView = {
+    let images: CustomImageView = {
         let image = UIImage(systemName: "cube")
-        let imageView = UIImageView(image: image)
+        let imageView = CustomImageView(image: image)
         imageView.contentMode = .scaleAspectFit
         imageView.alpha = 0.3
         imageView.tintColor = .black
@@ -67,7 +67,7 @@ class ProductTableViewCell: UITableViewCell {
         return label
     }()
     
-    let stepper: Stepper = Stepper()
+    var stepper: Stepper = Stepper()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -117,7 +117,7 @@ class ProductTableViewCell: UITableViewCell {
             stepper.leadingAnchor.constraint(equalTo: images.trailingAnchor, constant: 10),
             stepper.heightAnchor.constraint(equalToConstant: 24),
             stepper.widthAnchor.constraint(equalToConstant: 70),
-            stepper.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10)
+            stepper.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -18)
         ])
     }
     
@@ -130,19 +130,17 @@ class ProductTableViewCell: UITableViewCell {
         allPriceLabel.text = data.allPrice.priceFormat()
         myPriceLabel.text = data.myPrice.priceFormat()
         
-//        DispatchQueue.global(qos: .utility).async {
-//
-//            sleep(UInt32.random(in: 2...6))
-//
-//            if let url = data.imageURL,
-//                let data = try? Data(contentsOf: url),
-//                let image = UIImage(data: data) {
-//                DispatchQueue.main.async {
-//                    self.images.image = image
-//                    self.images.alpha = 1
-//                }
-//            }
-//        }
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            if let imageURL = data.imageURL {
+                self?.images.loadImage(url: imageURL) {
+                    self?.images.alpha = 1
+                }
+            }
+        }
+    }
+    
+    override func prepareForReuse() {
+        stepper.valueSubject = PublishSubject<Double>()
     }
 
 }

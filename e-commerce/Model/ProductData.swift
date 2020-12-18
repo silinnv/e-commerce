@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import RxDataSources
 
 struct ProductData: ProductDataSource {
     
@@ -41,11 +42,36 @@ struct ProductData: ProductDataSource {
 
 extension ProductData {
     
-    init?(product: ProductDatabaseProtocol) {
+    init(product: ProductDatabaseProtocol) {
         self.ID         = product.ID
         self.name       = product.name
         self.weight     = product.weight
         self.imageURL   = product.imageURL
         self.price      = product.price
+    }
+}
+
+extension ProductData: IdentifiableType {
+    var identity: Identity {
+        return ID
+    }
+    typealias Identity = String
+}
+
+extension ProductData: Equatable {
+    static func == (lhs: ProductData, rhs: ProductData) -> Bool {
+        lhs.allCount == rhs.allCount &&
+            lhs.ID == rhs.ID &&
+            lhs.imageURL == rhs.imageURL &&
+            lhs.myCount == rhs.myCount &&
+            lhs.price == rhs.price
+    }
+    
+    static func != (lhs: ProductData, rhs: ProductData) -> Bool {
+        lhs.allCount != rhs.allCount &&
+        lhs.ID != rhs.ID &&
+        lhs.imageURL != rhs.imageURL &&
+        lhs.myCount != rhs.myCount &&
+        lhs.price != rhs.price
     }
 }

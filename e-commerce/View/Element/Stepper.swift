@@ -33,6 +33,7 @@ class Stepper: UIView {
             valueLabel.text = showIntValue ? "\(Int(value))" : "\(value)"
         }
     }
+    
     public var minValue: Double = 0
     public var maxValue: Double = .infinity
     public var stepValue: Double = 1
@@ -54,11 +55,19 @@ class Stepper: UIView {
     // MARK: - Init
     public init(initValue: Double = 0.0) {
         super.init(frame: .zero)
+        valueSubject
+            .subscribe(onNext: { [unowned self] newValue in
+                self.valueLabel.text = self.showIntValue ? "\(Int(newValue))" : "\(newValue)"
+            }).disposed(by: DisposeBag())
         commonInit(initValue: initValue)
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    func updateValue(_ value: Double) {
+        valueSubject.onNext(value)
     }
     
     // MARK: - View setup
@@ -119,11 +128,6 @@ class Stepper: UIView {
             stack.centerXAnchor.constraint(equalTo: centerXAnchor),
             stack.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
-    }
-    
-    override open func layoutSubviews() {
-        super.layoutSubviews()
-//        valueLabel.text = showIntValue ? "\(Int(value))" : "\(value)"
     }
     
     // MARK: - Stepping

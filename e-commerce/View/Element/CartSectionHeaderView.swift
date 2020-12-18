@@ -27,21 +27,27 @@ class CartSectionHeaderView: UIView {
     
     init(data: HeaderViewModel) {
         super.init(frame: .zero)
-        commonInit(data: data)
+        titleLabel.text = data.title
+        priceLabel.text = data.price
+        commonInit()
+    }
+    
+    init(data: HeaderSectionProductsData) {
+        super.init(frame: .zero)
+        titleLabel.text = data.title
+        priceLabel.text = data.myPrice + " " + data.allProce
+        commonInit()
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    private func commonInit(data: HeaderViewModel) {
+    private func commonInit() {
         backgroundColor = .white
-        titleLabel.text = data.title
-        priceLabel.text = data.price
         addBG()
         add(titleLabel)
         add(priceLabel)
-//        addLine()
         setupLayoutConstraints()
     }
     

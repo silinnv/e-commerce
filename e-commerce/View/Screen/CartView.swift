@@ -11,12 +11,7 @@ import UIKit
 class CartView: UIView {
     
     let tableView           = UITableView()
-    
-    let headerView          : CartHeaderTableView = {
-        let header = CartHeaderTableView()
-//        header.backgroundColor = .white
-        return header
-    }()
+    let headerView          = CartHeaderTableView()
     
     let cartPickerButton:   UIButton!
     let cartSettingButton:  UIButton!
@@ -62,6 +57,13 @@ extension CartView {
     
     func updateView(with cart: CartDataSource) {
         headerView.updateView(with: cart)
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
+        }
+    }
+    
+    func updateView(withData cart: CartControllerData) {
+        headerView.updateView(withData: cart)
         DispatchQueue.main.async {
             self.tableView.reloadData()
         }

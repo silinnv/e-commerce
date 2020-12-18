@@ -40,7 +40,14 @@ class DataManager {
     
     func setupSubscribe() {
         
+        
+//        cartDatabaseSubject.bind { _ in     print(">>>cart      DB") }.disposed(by: bag)
+//        productDatabaseSubject.bind { _ in  print(">>>products  DB") }.disposed(by: bag)
+//        cartSubject.bind { _ in             print(">>>cart      DATA <<") }.disposed(by: bag)
+//        productsSubject.bind { _ in         print(">>>product   DATA <<") }.disposed(by: bag)
+        
         cartDatabaseSubject
+            .filter { [unowned self] _ in self.myProductKeys == nil }
             .subscribe(onNext: { [unowned self] cart in
                 self.setMyProductKeys(cart: cart)
             }).disposed(by: bag)
@@ -51,6 +58,9 @@ class DataManager {
                 productDatabaseSubject.asObservable().filter { $0.count > 0 }
             )
             .bind { [unowned self] cart, productsDatabseDictionary in
+                
+                print("    combine [cart      DATA | products  DB ]")
+                
                 guard let myProductKeys = self.myProductKeys else { return }
                 
                 var productsData = productsDatabseDictionary.values
@@ -91,6 +101,7 @@ class DataManager {
         Observable
             .combineLatest(cartDatabaseSubject.asObserver(), productDatabaseSubject.asObservable())
             .compactMap { [unowned self] cart, products in
+                print("    combine [cart      DB   | products  DB ]")
                 let uid = self.userDefault.currentUserID
                 return CartData(cart: cart, products: products, currentUID: uid)
             }
@@ -136,7 +147,7 @@ class DataManager {
     }
     
     func resubscribeOnCart(withNewCart newCart: CartDatabaseProtocol) {
-//        cartDatabaseSubject.onNext(newCart)
+//      cartDatabaseSubject.onNext(newCart)
         let newCartID = newCart.ID
         resetProducts()
         resubscribeOnCart(withNewCartKey: newCartID)
@@ -156,11 +167,20 @@ class DataManager {
                 for newProduct in newProductDictionary {
                     productDictionary[newProduct.key] = newProduct.value
                 }
+                
+                for key in productDictionary.keys {
+                    if !self.productKeysBuff.contains(key) {
+                        print("", key)
+                        productDictionary[key] = nil
+                    }
+                 }
+                
                 self.productDatabaseSubject.accept(productDictionary)
             }).disposed(by: bag)
     }
     
     func resetProducts() {
+//        productDatabaseSubject.accept([:])
         productKeysBuff = Set<String>()
         myProductKeys = nil
     }
@@ -176,5 +196,20 @@ class DataManager {
             myProductKeys = myKeys
         }
     }
-
+    
+    // MARK: - Image
+    var imagesDataCaches = NSCache<NSString, NSData>()
+    
+    func downloadImage(url: URL?, _ complition: @escaping (Data) -> Void) {
+        
+        guard let imageURL = url else { return }
+        let imageKey = imageURL.absoluteString as NSString
+        
+        if let imageData = imagesDataCaches.object(forKey: imageKey) {
+            complition(imageData as Data)
+        } else  if let data = try? Data(contentsOf: imageURL) {
+            self.imagesDataCaches.setObject(data as NSData, forKey: imageKey)
+            complition(data)
+        }
+    }
 }
